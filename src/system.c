@@ -113,7 +113,6 @@ noAccount:
     printf("\nEnter the account number:");
     scanf("%d", &r.accountNbr);
 
-    rewind(pf); // Rewind the file pointer to read existing accounts
     while (getAccountFromFile(pf, userName, &cr))
     {
         if (strcmp(userName, u.name) == 0 && cr.accountNbr == r.accountNbr)
