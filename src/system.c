@@ -20,18 +20,19 @@ int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
 
 void saveAccountToFile(FILE *ptr, struct User u, struct Record r)
 {
-    fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n\n",
-            &r->id,
-	    &u->id
-	    &u->name,
-            r.accountNbr,
-            r.deposit.month,
-            r.deposit.day,
-            r.deposit.year,
-            r.country,
-            r.phone,
-            r.amount,
-            r.accountType);
+    // Writing the data directly (removed & operator for struct members)
+    fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
+            r.id,               // Record ID
+            u.id,               // User ID
+            u.name,             // User Name
+            r.accountNbr,       // Account Number
+            r.deposit.month,    // Deposit Date: Month
+            r.deposit.day,      // Deposit Date: Day
+            r.deposit.year,     // Deposit Date: Year
+            r.country,          // Country
+            r.phone,            // Phone Number
+            r.amount,           // Amount
+            r.accountType);     // Account Type
 }
 
 void stayOrReturn(int notGood, void f(struct User u), struct User u)
@@ -112,6 +113,7 @@ noAccount:
     printf("\nEnter the account number:");
     scanf("%d", &r.accountNbr);
 
+    rewind(pf); // Rewind the file pointer to read existing accounts
     while (getAccountFromFile(pf, userName, &cr))
     {
         if (strcmp(userName, u.name) == 0 && cr.accountNbr == r.accountNbr)
@@ -162,4 +164,13 @@ void checkAllAccounts(struct User u)
     }
     fclose(pf);
     success(u);
+}
+
+
+void updateAccountInfo(struct User u){
+
+}
+
+void checkDetailAccount(struct User u){
+
 }
