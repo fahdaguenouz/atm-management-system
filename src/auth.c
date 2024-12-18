@@ -32,12 +32,14 @@ void loginMenu(char username[50], char password[50])
         return exit(1);
     }
 };
-void registerMenu(char a[50], char pass[50])
+
+int registerMenu(char a[50], char pass[50])
 {
     FILE *fp;
-  int maxId = -1; // Initialize to -1 to handle empty files
+    int maxId = -1; // Initialize to -1 to handle empty files
     int tempId, readId; // Separate variables for reading IDs
     char tempName[50], tempPass[50];
+
     // Open the users file
     if ((fp = fopen(USERS, "a+")) == NULL)
     {
@@ -47,35 +49,40 @@ void registerMenu(char a[50], char pass[50])
 
     // Find the highest existing ID
     rewind(fp);
-    
-    while (fscanf(fp, "%d %s %s", &tempId, tempName, tempPass) != EOF) {
-        if (tempId > maxId) {
+    while (fscanf(fp, "%d %s %s", &tempId, tempName, tempPass) != EOF)
+    {
+        if (tempId > maxId)
+        {
             maxId = tempId; // Update maxId to the highest ID found
         }
     }
 
     int newId = maxId + 1; // Assign the new ID as one higher than the max ID
 
+    // Start of the label for retrying username entry
 
     // Collect username
     system("clear");
     printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t   User Registration:");
-
+    retry_username:
     printf("\n\n\t\tEnter a username: ");
     scanf("%s", a);
 
     // Check if the username already exists
+    int usernameExists = 0;
     rewind(fp);
     while (fscanf(fp, "%d %s %s", &readId, tempName, tempPass) != EOF)
     {
         if (strcmp(tempName, a) == 0)
         {
             printf("\n✖ Username already exists. Please try again.\n");
-            fclose(fp);
-            return;
+       
+            goto retry_username; 
         }
     }
 
+
+    // Username does not exist, break the loop and proceed
     // Collect password securely
     struct termios oflags, nflags;
     tcgetattr(fileno(stdin), &oflags);
@@ -86,7 +93,6 @@ void registerMenu(char a[50], char pass[50])
     if (tcsetattr(fileno(stdin), TCSANOW, &nflags) != 0)
     {
         perror("tcsetattr");
-        fclose(fp);
         exit(1);
     }
 
@@ -96,17 +102,24 @@ void registerMenu(char a[50], char pass[50])
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0)
     {
         perror("tcsetattr");
-        fclose(fp);
+        exit(1);
+    }
+
+    // Re-open the users file to append the new user
+    if ((fp = fopen(USERS, "a+")) == NULL)
+    {
+        perror("Error opening users file");
         exit(1);
     }
 
     // Save the new user to the file
     fprintf(fp, "%d %s %s\n", newId, a, pass);
-
     fclose(fp);
 
     printf("\n✔ Registration successful! Your ID is %d. You can now log in.\n", newId);
+    return newId;
 }
+
 int getPassword(const char *username, const char *password)
 {
     FILE *fp;

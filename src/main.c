@@ -114,11 +114,17 @@ void initMenu(struct User *u)
         case 2:
             // student TODO : add your **Registration** function
             // here
-              registerMenu(u->name, u->password);
-            printf("\n✔ Registration successful!\n");
-            printf("\nPress Enter to continue...");
-            getchar();
-            break;
+             int registeredId= registerMenu(u->name, u->password);
+           if (registeredId > 0)
+    {
+        u->id = registeredId; // Save the new user's ID
+         printf("\n✔ Registration successful!\n");
+         printf("\nPress Enter to continue...");
+         while (getchar() != '\n');
+        getchar();
+        running = 0; // Exit the loop to proceed to mainMenu
+    }
+    break;
         case 3:
             printf("\nExiting... Goodbye!\n");
             exit(1);
