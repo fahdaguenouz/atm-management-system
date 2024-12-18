@@ -3,14 +3,14 @@
 
 char *USERS = "./data/users.txt";
 
-void loginMenu(char a[50], char pass[50])
+void loginMenu(char username[50], char password[50])
 {
     struct termios oflags, nflags;
 
     system("clear");
     printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t\t User Login:");
-    scanf("%s", a);
-
+    scanf("%49s", username); //Ensure the username buffer is limited to prevent overflow
+    clear();
     // disabling echo
     tcgetattr(fileno(stdin), &oflags);
     nflags = oflags;
@@ -23,8 +23,8 @@ void loginMenu(char a[50], char pass[50])
         return exit(1);
     }
     printf("\n\n\n\n\n\t\t\t\tEnter the password to login:");
-    scanf("%s", pass);
-
+    scanf("%49s", password);
+    clear();
     // restore terminal
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0)
     {
@@ -107,27 +107,32 @@ void registerMenu(char a[50], char pass[50])
 
     printf("\n✔ Registration successful! Your ID is %d. You can now log in.\n", newId);
 }
-const char *getPassword(struct User u)
+int getPassword(const char *username, const char *password)
 {
     FILE *fp;
     struct User userChecker;
 
     if ((fp = fopen("./data/users.txt", "r")) == NULL)
     {
-        printf("Error! opening file");
-        exit(1);
+        perror("Error opening users file");
+        return -3;
     }
 
-    while (fscanf(fp, "%s %s", userChecker.name, userChecker.password) != EOF)
+    // Read the file line by line and compare username and password
+    while (fscanf(fp, "%d %s %s", &userChecker.id, userChecker.name, userChecker.password) != EOF)
     {
-        if (strcmp(userChecker.name, u.name) == 0)
+        if (strcmp(userChecker.name, username) == 0)
         {
+            // Username matches, verify password
             fclose(fp);
-            char *buff = userChecker.password;
-            return buff;
+            if (strcmp(userChecker.password, password) == 0)
+            {
+                return userChecker.id; // Return the user ID on success
+            }
+            return -1; // Password mismatch
         }
     }
 
     fclose(fp);
-    return "no user found";
+    return -2; // Username not found
 }

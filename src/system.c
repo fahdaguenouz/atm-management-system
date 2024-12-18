@@ -20,6 +20,26 @@ int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
 
 void saveAccountToFile(FILE *ptr, struct User u, struct Record r)
 {
+
+    // Rewind the file to find the highest record ID
+    rewind(ptr);
+    struct Record tempRecord;
+    char tempUserName[50];
+    int maxRecordID = -1;
+
+    while (getAccountFromFile(ptr, tempUserName, &tempRecord))
+    {
+        if (tempRecord.id > maxRecordID)
+        {
+            maxRecordID = tempRecord.id;
+        }
+    }
+
+    // Assign the next record ID
+    r.id = maxRecordID + 1;
+
+    // User ID is already set in the current user structure
+    r.userId = u.id;
     // Writing the data directly (removed & operator for struct members)
     fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
             r.id,               // Record ID
@@ -97,38 +117,93 @@ invalid:
     }
 }
 
+void clear(void){
+    char buffer ;
+    while ((buffer = getchar())!= '\n' && buffer!= EOF);
+}
+
 void createNewAcc(struct User u)
 {
     struct Record r;
     struct Record cr;
     char userName[50];
     FILE *pf = fopen(RECORDS, "a+");
-
-noAccount:
+    if (!pf)
+    {
+        perror("Failed to open file");
+        return;
+    }
+ 
     system("clear");
     printf("\t\t\t===== New record =====\n");
 
+enterDate:
     printf("\nEnter today's date(mm/dd/yyyy):");
-    scanf("%d/%d/%d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
+    int validDate=scanf("%d/%d/%d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
+    clear();  // to clear the newline character in input buffer
+    if(validDate !=3||r.deposit.month<1||r.deposit.month>12||
+    r.deposit.day<1||r.deposit.day>31||r.deposit.year<2023)
+    {
+        printf("✖ Invalid date. Please try again.\n");
+        goto enterDate;
+    }
+enterAccountNumber :
     printf("\nEnter the account number:");
     scanf("%d", &r.accountNbr);
-
+      clear();
+    if(r.accountNbr<0){
+        printf("✖ Invalid account number. Please try again.\n");
+        goto enterAccountNumber;
+    }
+rewind(pf);
     while (getAccountFromFile(pf, userName, &cr))
     {
-        if (strcmp(userName, u.name) == 0 && cr.accountNbr == r.accountNbr)
+        if (cr.accountNbr == r.accountNbr)
         {
-            printf("✖ This Account already exists for this user\n\n");
-            goto noAccount;
+            printf("✖ This account number already exists for this user\n\n");
+            goto enterAccountNumber;
         }
     }
+
+enterCountry:
+
     printf("\nEnter the country:");
     scanf("%s", r.country);
+    clear();
+
+enterPhoneNumber:
+
     printf("\nEnter the phone number:");
     scanf("%d", &r.phone);
+    clear();
+
+    if(r.phone<0){
+        printf("✖ Invalid phone number. Please try again.\n");
+        goto enterPhoneNumber;
+    }
+
+
+enterAmount:
+
     printf("\nEnter amount to deposit: $");
     scanf("%lf", &r.amount);
+    clear();
+    if(r.amount<0){
+        printf("✖ Invalid amount. Please try again.\n");
+        goto enterAmount;
+    }
+
+enterAccountType:
     printf("\nChoose the type of account:\n\t-> saving\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice:");
     scanf("%s", r.accountType);
+    clear();
+    if (strcmp(r.accountType, "saving") != 0 && strcmp(r.accountType, "current") != 0 &&
+        strcmp(r.accountType, "fixed01") != 0 && strcmp(r.accountType, "fixed02") != 0 &&
+        strcmp(r.accountType, "fixed03") != 0)
+    {
+        printf("✖ Invalid account type. Please try again.\n");
+        goto enterAccountType;
+    }
 
     saveAccountToFile(pf, u, r);
 

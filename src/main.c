@@ -56,43 +56,77 @@ void mainMenu(struct User u)
 
 void initMenu(struct User *u)
 {
-    int r = 0;
+    int running = 1;
     int option;
+    while (running)
+    {
+
     system("clear");
     printf("\n\n\t\t======= ATM =======\n");
     printf("\n\t\t-->> Feel free to login / register :\n");
     printf("\n\t\t[1]- login\n");
     printf("\n\t\t[2]- register\n");
     printf("\n\t\t[3]- exit\n");
-    while (!r)
-    {
-        scanf("%d", &option);
+    
+        printf("\nChoose an option: ");
+        if (scanf("%d", &option) != 1)
+        {
+            // Clear invalid input
+            while (getchar() != '\n');
+            printf("✖ Invalid input! Please enter a number.\n");
+            printf("\nPress Enter to continue...");
+            getchar();
+            continue;
+        }
         switch (option)
         {
         case 1:
             loginMenu(u->name, u->password);
-            if (strcmp(u->password, getPassword(*u)) == 0)
+            int userId = getPassword(u->name, u->password);
+            if (userId > 0)
             {
-                printf("\n\nPassword Match!");
+                u->id = userId; // Save the logged-in user's ID
+                printf("\n✔ Login successful! Welcome, %s.\n", u->name);
+                printf("\nPress Enter to continue...");
+                getchar();
+                running = 0; // Exit the loop to proceed to mainMenu
             }
-            else
+            else if (userId ==-1)
             {
-                printf("\nWrong password!! or User Name\n");
-                exit(1);
+                printf("\nWrong password!! \n");
+                printf("\nPress Enter to try again...");
+                getchar();
+               
+            }else if(userId==-2) {
+
+                printf("\nUser not found!! \n");
+                printf("\nPress Enter to try again...");
+                getchar();
+
+                }else {
+
+                printf("\nAn error occurred while accessing the user file \n");
+                printf("\nPress Enter to try again...");
+                getchar();
             }
-            r = 1;
+           
             break;
         case 2:
             // student TODO : add your **Registration** function
             // here
               registerMenu(u->name, u->password);
-            r = 1;
+            printf("\n✔ Registration successful!\n");
+            printf("\nPress Enter to continue...");
+            getchar();
             break;
         case 3:
+            printf("\nExiting... Goodbye!\n");
             exit(1);
             break;
         default:
             printf("Insert a valid operation!\n");
+             
+             
         }
     }
 };
@@ -100,8 +134,11 @@ void initMenu(struct User *u)
 int main()
 {
     struct User u;
-    
     initMenu(&u);
-    mainMenu(u);
+    if (u.id > 0) // Only proceed to mainMenu if a user is logged in
+    {
+        mainMenu(u);
+    }
+    
     return 0;
 }
