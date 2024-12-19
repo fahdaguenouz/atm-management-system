@@ -1,59 +1,59 @@
 #include "header.h"
+#include <sqlite3.h>
 
-const char *RECORDS = "./data/records.txt";
 
-int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
-{
-    return fscanf(ptr, "%d %d %s %d %d/%d/%d %s %d %lf %s",
-                  &r->id,
-		  &r->userId,
-		  name,
-                  &r->accountNbr,
-                  &r->deposit.month,
-                  &r->deposit.day,
-                  &r->deposit.year,
-                  r->country,
-                  &r->phone,
-                  &r->amount,
-                  r->accountType) != EOF;
-}
+void initDatabase() {
+   
+    char *errMsg = 0;
+    int rc;
 
-void saveAccountToFile(FILE *ptr, struct User u, struct Record r)
-{
+    rc = sqlite3_open("data/database.db", &db);
 
-    // Rewind the file to find the highest record ID
-    rewind(ptr);
-    struct Record tempRecord;
-    char tempUserName[50];
-    int maxRecordID = -1;
-
-    while (getAccountFromFile(ptr, tempUserName, &tempRecord))
-    {
-        if (tempRecord.id > maxRecordID)
-        {
-            maxRecordID = tempRecord.id;
-        }
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        exit(1);
     }
 
-    // Assign the next record ID
-    r.id = maxRecordID + 1;
+    // Create tables
+    const char *sqlUser = "CREATE TABLE IF NOT EXISTS users ("
+                          "id INTEGER PRIMARY KEY, "
+                          "name TEXT UNIQUE, "
+                          "password TEXT);";
 
-    // User ID is already set in the current user structure
-    r.userId = u.id;
-    // Writing the data directly (removed & operator for struct members)
-    fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
-            r.id,               // Record ID
-            u.id,               // User ID
-            u.name,             // User Name
-            r.accountNbr,       // Account Number
-            r.deposit.month,    // Deposit Date: Month
-            r.deposit.day,      // Deposit Date: Day
-            r.deposit.year,     // Deposit Date: Year
-            r.country,          // Country
-            r.phone,            // Phone Number
-            r.amount,           // Amount
-            r.accountType);     // Account Type
+    const char *sqlRecord = "CREATE TABLE IF NOT EXISTS records ("
+                            "id INTEGER PRIMARY KEY, "
+                            "userId INTEGER, "
+                            "name TEXT, "
+                            "accountNbr INTEGER, "
+                            "country TEXT, "
+                            "phone INTEGER, "
+                            "accountType TEXT, "
+                            "amount REAL, "
+                            "depositMonth INTEGER, "
+                            "depositDay INTEGER, "
+                            "depositYear INTEGER, "
+                            "withdrawMonth INTEGER, "
+                            "withdrawDay INTEGER, "
+                            "withdrawYear INTEGER, "
+                            "FOREIGN KEY(userId) REFERENCES users(id));";
+
+    rc = sqlite3_exec(db, sqlUser, 0, 0, &errMsg);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+    }
+
+    rc = sqlite3_exec(db, sqlRecord, 0, 0, &errMsg);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+    }
+
+    sqlite3_close(db);
 }
+
+
+
 
 void stayOrReturn(int notGood, void f(struct User u), struct User u)
 {
@@ -100,6 +100,7 @@ void success(struct User u)
     printf("\n✔ Success!\n\n");
 invalid:
     printf("Enter 1 to go to the main menu and 0 to exit!\n");
+    printf("response: ");
     scanf("%d", &option);
     system("clear");
     if (option == 1)
@@ -121,130 +122,242 @@ void clear(void){
     char buffer ;
     while ((buffer = getchar())!= '\n' && buffer!= EOF);
 }
-
-void createNewAcc(struct User u)
-{
+void createNewAcc(struct User u) {
     struct Record r;
-    struct Record cr;
-    char userName[50];
-    FILE *pf = fopen(RECORDS, "a+");
-    if (!pf)
-    {
-        perror("Failed to open file");
-        return;
-    }
- 
+    sqlite3_stmt *stmt;
     system("clear");
-    printf("\t\t\t===== New record =====\n");
+    printf("\t\t\t===== New Record =====\n");
 
+    // Get deposit date
 enterDate:
-    printf("\nEnter today's date(mm/dd/yyyy):");
-    int validDate=scanf("%d/%d/%d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
-    clear();  // to clear the newline character in input buffer
-    if(validDate !=3||r.deposit.month<1||r.deposit.month>12||
-    r.deposit.day<1||r.deposit.day>31||r.deposit.year<2023)
-    {
+    printf("\nEnter today's date (mm/dd/yyyy): ");
+    scanf("%2d/%2d/%4d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
+    clear();
+    if (r.deposit.month < 1 || r.deposit.month > 12 || r.deposit.day < 1 || r.deposit.day > 31 || r.deposit.year < 2023) {
         printf("✖ Invalid date. Please try again.\n");
         goto enterDate;
     }
-enterAccountNumber :
-    printf("\nEnter the account number:");
+
+    // Get account number
+enterAccountNumber:
+    printf("\nEnter the account number: ");
     scanf("%d", &r.accountNbr);
-      clear();
-    if(r.accountNbr<0){
+    clear();
+    if (r.accountNbr < 0) {
         printf("✖ Invalid account number. Please try again.\n");
         goto enterAccountNumber;
     }
-rewind(pf);
-    while (getAccountFromFile(pf, userName, &cr))
-    {
-        if (cr.accountNbr == r.accountNbr)
-        {
-            printf("✖ This account number already exists for this user\n\n");
-            goto enterAccountNumber;
-        }
-    }
 
-enterCountry:
+    // Check if account number exists
+const char *checkQuery = "SELECT id FROM records WHERE accountNbr = ?";
+if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, NULL) != SQLITE_OK) {
+    printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+    return;
+}
 
-    printf("\nEnter the country:");
-    scanf("%s", r.country);
+// Bind the account number
+sqlite3_bind_int(stmt, 1, r.accountNbr);
+
+// Execute the query
+if (sqlite3_step(stmt) == SQLITE_ROW) {
+    printf("Account number exists.\n");
+} else {
+    printf("Account number does not exist.\n");
+}
+
+// Finalize the statement
+sqlite3_finalize(stmt);
+
+    // Get other details
+    printf("\nEnter the country: ");
+    scanf("%49s", r.country);
     clear();
-
 enterPhoneNumber:
-
-    printf("\nEnter the phone number:");
+    printf("\nEnter the phone number: ");
     scanf("%d", &r.phone);
     clear();
-
-    if(r.phone<0){
-        printf("✖ Invalid phone number. Please try again.\n");
-        goto enterPhoneNumber;
-    }
-
-
+            if (r.phone < 0) {
+                printf("✖ Invalid phone number. Please try again.\n");
+             goto enterPhoneNumber;
+            }
 enterAmount:
-
     printf("\nEnter amount to deposit: $");
     scanf("%lf", &r.amount);
     clear();
-    if(r.amount<0){
+    if (r.amount < 0) {
         printf("✖ Invalid amount. Please try again.\n");
         goto enterAmount;
     }
 
 enterAccountType:
-    printf("\nChoose the type of account:\n\t-> saving\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice:");
-    scanf("%s", r.accountType);
+    printf("\nChoose the type of account:\n\t-> saving\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice: ");
+    scanf("%49s", r.accountType);
     clear();
     if (strcmp(r.accountType, "saving") != 0 && strcmp(r.accountType, "current") != 0 &&
         strcmp(r.accountType, "fixed01") != 0 && strcmp(r.accountType, "fixed02") != 0 &&
-        strcmp(r.accountType, "fixed03") != 0)
-    {
+        strcmp(r.accountType, "fixed03") != 0) {
         printf("✖ Invalid account type. Please try again.\n");
         goto enterAccountType;
     }
 
-    saveAccountToFile(pf, u, r);
+    // Insert the new account
+    const char *insertQuery = "INSERT INTO records (userId, accountNbr, country, phone, accountType, amount, depositMonth, depositDay, depositYear) "
+                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    if (sqlite3_prepare_v2(db, insertQuery, -1, &stmt, NULL) != SQLITE_OK) {
+        printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return;
+    }
+    sqlite3_bind_int(stmt, 1, u.id);
+    sqlite3_bind_int(stmt, 2, r.accountNbr);
+    sqlite3_bind_text(stmt, 3, r.country, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 5, r.phone);
+    sqlite3_bind_text(stmt, 5, r.accountType, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 6, r.amount);
+    sqlite3_bind_int(stmt, 7, r.deposit.month);
+    sqlite3_bind_int(stmt, 8, r.deposit.day);
+    sqlite3_bind_int(stmt, 9, r.deposit.year);
 
-    fclose(pf);
-    success(u);
+    if (sqlite3_step(stmt) == SQLITE_DONE) {
+        printf("✔ Account created successfully.\n");
+    } else {
+        printf("✖ Failed to create account: %s\n", sqlite3_errmsg(db));
+    }
+    sqlite3_finalize(stmt);
 }
+void checkAllAccounts(struct User u) {
+    
+    sqlite3_stmt *stmt;
+    const char *query = "SELECT accountNbr, depositDate, country, phone, amount, accountType "
+                        "FROM Accounts WHERE userId = ?";
 
-void checkAllAccounts(struct User u)
-{
-    char userName[100];
-    struct Record r;
-
-    FILE *pf = fopen(RECORDS, "r");
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    sqlite3_bind_int(stmt, 1, u.id);
 
     system("clear");
-    printf("\t\t====== All accounts from user, %s =====\n\n", u.name);
-    while (getAccountFromFile(pf, userName, &r))
-    {
-        if (strcmp(userName, u.name) == 0)
-        {
-            printf("_____________________\n");
-            printf("\nAccount number:%d\nDeposit Date:%d/%d/%d \ncountry:%s \nPhone number:%d \nAmount deposited: $%.2f \nType Of Account:%s\n",
-                   r.accountNbr,
-                   r.deposit.day,
-                   r.deposit.month,
-                   r.deposit.year,
-                   r.country,
-                   r.phone,
-                   r.amount,
-                   r.accountType);
-        }
+    printf("\t\t====== All Accounts for User, %s =====\n\n", u.name);
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        printf("_____________________\n");
+        printf("\nAccount number: %d\nDeposit Date: %s\nCountry: %s\nPhone number: %d\nAmount deposited: $%.2f\nType Of Account: %s\n",
+               sqlite3_column_int(stmt, 0),  // accountNbr
+               sqlite3_column_text(stmt, 1), // depositDate
+               sqlite3_column_text(stmt, 2), // country
+               sqlite3_column_int(stmt, 3),  // phone
+               sqlite3_column_double(stmt, 4), // amount
+               sqlite3_column_text(stmt, 5)); // accountType
     }
-    fclose(pf);
-    success(u);
+    sqlite3_finalize(stmt);
 }
 
+void updateAccountInfo(struct User u) {
+    int recordId;
+    int newPhoneNumber;
+    char newCountry[100];
+    int choice;
+    int recordFound = 0;
 
-void updateAccountInfo(struct User u){
+retry:
+    system("clear");
+    printf("\t\t\t===== Update Account Information  =====\n\n");
+    printf("\nEnter the ID of the record you want to update: ");
+    scanf("%d", &recordId);
 
+    FILE *file = fopen("database.db", "r+");
+    if (file == NULL) {
+        printf("\n✖ Unable to open the accounts file.\n");
+        return;
+    }
+
+    struct Record record;
+    long position;
+    char line[256]; // Buffer for reading lines
+
+    while (fgets(line, sizeof(line), file)) {
+        // Parse the record
+        if (sscanf(line, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                   &record.id, &record.userId, record.name, &record.accountNbr,
+                   &record.deposit.month, &record.deposit.day, &record.deposit.year,
+                   record.country, &record.phone, &record.amount, record.accountType) == 11) {
+            if (record.id == recordId && record.userId == u.id) {
+                recordFound = 1;
+                position = ftell(file) - strlen(line); // Record position
+                break;
+            }
+        }
+    }
+
+    if (!recordFound) {
+        printf("\n✖ Record not found or does not belong to you.\n");
+        fclose(file);
+
+        char retryOption;
+        printf("\nWould you like to try again? (y/n): ");
+        scanf(" %c", &retryOption);
+
+        if (retryOption == 'y' || retryOption == 'Y') {
+            goto retry;
+        } else {
+            printf("\nReturning to main menu...\n");
+            return;
+        }
+    }
+
+    // Ask what to update
+    printf("\n✔ Record found!\n");
+    printf("\nWhat would you like to update?\n");
+    printf("[1] Phone Number\n");
+    printf("[2] Country\n");
+    printf("\nEnter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+    case 1:
+        printf("\nEnter new phone number: ");
+        scanf("%d", &newPhoneNumber);
+        record.phone = newPhoneNumber;
+        break;
+    case 2:
+        printf("\nEnter new country: ");
+        scanf("%s", newCountry);
+        strcpy(record.country, newCountry);
+        break;
+    default:
+        printf("\n✖ Invalid choice.\n");
+        fclose(file);
+        return;
+    }
+
+    // Update the record in the file
+    fseek(file, position, SEEK_SET); // Move to the record position
+    fprintf(file, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
+            record.id, record.userId, record.name, record.accountNbr,
+            record.deposit.month, record.deposit.day, record.deposit.year,
+            record.country, record.phone, record.amount, record.accountType);
+
+    printf("\n✔ Record information updated successfully!\n");
+
+    fclose(file);
 }
 
 void checkDetailAccount(struct User u){
 
+}
+
+void trimWhitespace(char *str) {
+    int end;
+    int start = 0;
+    
+    // Trim leading spaces
+    while (str[start] == ' ' || str[start] == '\t' || str[start] == '\n') {
+        start++;
+    }
+    
+    // Trim trailing spaces
+    end = strlen(str) - 1;
+    while (end >= start && (str[end] == ' ' || str[end] == '\t' || str[end] == '\n')) {
+        end--;
+    }
+    
+    // Shift characters to remove leading spaces
+    memmove(str, str + start, end - start + 1);
+    str[end - start + 1] = '\0';  // Null-terminate the string
 }

@@ -1,7 +1,10 @@
 objects = src/main.o src/system.o src/auth.o
+CC = gcc
+CFLAGS = -Wall -g
+LIBS = -lsqlite3
 
 atm : $(objects)
-	cc -o atm $(objects)
+	$(CC) -o atm $(objects) $(LIBS)
 
 main.o : src/header.h
 kbd.o : src/header.h

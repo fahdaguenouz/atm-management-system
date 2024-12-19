@@ -1,5 +1,5 @@
 #include "header.h"
-
+sqlite3 *db;
 void mainMenu(struct User u)
 {
     int option;
@@ -14,6 +14,7 @@ void mainMenu(struct User u)
     printf("\n\t\t[6]- Remove existing account\n");
     printf("\n\t\t[7]- Transfer ownership\n");
     printf("\n\t\t[8]- Exit\n");
+    printf("\n\t\tEnter your choice: ");
     scanf("%d", &option);
 
     switch (option)
@@ -47,6 +48,7 @@ void mainMenu(struct User u)
         // here
         break;
     case 8:
+        printf("\nExiting... Goodbye!\n");
         exit(1);
         break;
     default:
@@ -104,8 +106,7 @@ void initMenu(struct User *u)
                 getchar();
 
                 }else {
-
-                printf("\nAn error occurred while accessing the user file \n");
+                printf("\nAn error occurred while accessing the database  \n");
                 printf("\nPress Enter to try again...");
                 getchar();
             }
@@ -131,8 +132,7 @@ void initMenu(struct User *u)
             break;
         default:
             printf("Insert a valid operation!\n");
-             
-             
+           
         }
     }
 };
@@ -140,6 +140,7 @@ void initMenu(struct User *u)
 int main()
 {
     struct User u;
+    initDatabase();
     initMenu(&u);
     if (u.id > 0) // Only proceed to mainMenu if a user is logged in
     {
