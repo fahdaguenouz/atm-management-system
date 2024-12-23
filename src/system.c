@@ -411,12 +411,12 @@ void checkDetailAccount(struct User u) {
             } else if (strcmp(accountType, "fixed02") == 0) {
                 interest = amount * 0.05; // Fixed02 interest rate of 5%
                 int maturityYear = depositYear + 2; // Maturity after two years
-                printf("You will get $%.2f as interest on %02d/%02d/%04d.\n", interest /12.0*(12), depositDay,
+                printf("You will get $%.2f as interest on %02d/%02d/%04d.\n", interest*2 , depositDay,
                        depositMonth,maturityYear); 
             } else if (strcmp(accountType,"fixed03") ==0){
                 interest=amount*0.08; // Fixed03 interest rate of 
                 int maturityYear=depositYear+3; 
-                printf ("You will get $%.2f as interest on %02d/%02d/%04d.\n" ,interest/12.0*(12),depositDay,
+                printf ("You will get $%.2f as interest on %02d/%02d/%04d.\n" ,interest*3,depositDay,
                         depositMonth,maturityYear); 
             }
            else if(strcmp(accountType,"current")==0){
