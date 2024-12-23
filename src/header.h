@@ -43,6 +43,6 @@ void mainMenu(struct User u);
 void checkAllAccounts(struct User u);
 void checkDetailAccount(struct User u);
 void updateAccountInfo(struct User u);
-
+void makeTransactions(struct User u);
 //database 
 void initDatabase();
