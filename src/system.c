@@ -250,98 +250,110 @@ void checkAllAccounts(struct User u) {
     }
     sqlite3_finalize(stmt);
 }
+void updateAccountInfo(struct User u) {
+    int accountNbr; // Change from recordId to accountNbr
+    char newCountry[100];
+    char newPhone[15]; // Change to string to handle larger phone numbers
+    int choice;
+    sqlite3_stmt *stmt;
 
- void updateAccountInfo(struct User u) {
+retry:
+    system("clear");
+    printf("\t\t\t===== Update Account Information =====\n\n");
+    printf("\nEnter the account number of the record you want to update: ");
+    scanf("%d", &accountNbr);
 
- }
-//     int recordId;
-//     //int newPhoneNumber;
-//     char newCountry[100];
-//     int choice;
-//     int recordFound = 0;
+    // Check if the record exists
+    const char *checkQuery = "SELECT accountNbr, phone, country FROM records WHERE accountNbr = ? AND userId = ?";
+    
+    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, NULL) != SQLITE_OK) {
+        printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return;
+    }
 
-// retry:
-//     system("clear");
-//     printf("\t\t\t===== Update Account Information  =====\n\n");
-//     printf("\nEnter the ID of the record you want to update: ");
-//     scanf("%d", &recordId);
+    // Bind parameters
+    sqlite3_bind_int(stmt, 1, accountNbr);
+    sqlite3_bind_int(stmt, 2, u.id);
 
-//     FILE *file = fopen("database.db", "r+");
-//     if (file == NULL) {
-//         printf("\n✖ Unable to open the accounts file.\n");
-//         return;
-//     }
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        printf("\n✖ Record not found or does not belong to you.\n");
+        sqlite3_finalize(stmt);
 
-//     struct Record record;
-//     long position;
-//     char line[256]; // Buffer for reading lines
+        char retryOption;
+        printf("\nWould you like to try again? (y/n): ");
+        scanf(" %c", &retryOption);
 
-//     while (fgets(line, sizeof(line), file)) {
-//         // Parse the record
-//         // if (sscanf(line, "%d %d %s %d %d/%d/%d %s %d %lf %s",
-//         //            &record.id, &record.userId, record.name, &record.accountNbr,
-//         //            &record.deposit.month, &record.deposit.day, &record.deposit.year,
-//         //            record.country, &record.phone, &record.amount, record.accountType) == 11) {
-//         //     if (record.id == recordId && record.userId == u.id) {
-//         //         recordFound = 1;
-//         //         position = ftell(file) - strlen(line); // Record position
-//         //         break;
-//         //     }
-//         // }
-//     }
+        if (retryOption == 'y' || retryOption == 'Y') {
+            goto retry;
+        } else {
+            printf("\nReturning to main menu...\n");
+            return;
+        }
+    }
 
-//     if (!recordFound) {
-//         printf("\n✖ Record not found or does not belong to you.\n");
-//         fclose(file);
+    // Ask what to update
+    printf("\n✔ Record found!\n");
+    printf("\nWhat would you like to update?\n");
+    printf("[1] Phone Number\n");
+    printf("[2] Country\n");
+    printf("\nEnter your choice: ");
+    scanf("%d", &choice);
 
-//         char retryOption;
-//         printf("\nWould you like to try again? (y/n): ");
-//         scanf(" %c", &retryOption);
+    switch (choice) {
+        case 1:
+            printf("\nEnter new phone number: ");
+            scanf("%14s", newPhone); // Read as string
+            break;
+        case 2:
+            printf("\nEnter new country: ");
+            scanf("%49s", newCountry);
+            break;
+        default:
+            printf("\n✖ Invalid choice.\n");
+            sqlite3_finalize(stmt);
+            return;
+    }
 
-//         if (retryOption == 'y' || retryOption == 'Y') {
-//             goto retry;
-//         } else {
-//             printf("\nReturning to main menu...\n");
-//             return;
-//         }
-//     }
+    // Prepare the update statement
+    const char *updateQuery = "UPDATE records SET ";
+    
+    // Determine which field to update
+    if (choice == 1) {
+        updateQuery = "UPDATE records SET phone = ? WHERE accountNbr = ? AND userId = ?";
+        
+        if (sqlite3_prepare_v2(db, updateQuery, -1, &stmt, NULL) != SQLITE_OK) {
+            printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+            return;
+        }
+        
+        sqlite3_bind_text(stmt, 1, newPhone, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, accountNbr);
+        sqlite3_bind_int(stmt, 3, u.id);
+        
+    } else if (choice == 2) {
+        updateQuery = "UPDATE records SET country = ? WHERE accountNbr = ? AND userId = ?";
+        
+        if (sqlite3_prepare_v2(db, updateQuery, -1, &stmt, NULL) != SQLITE_OK) {
+            printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+            return;
+        }
+        
+        sqlite3_bind_text(stmt, 1, newCountry, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, accountNbr);
+        sqlite3_bind_int(stmt, 3, u.id);
+    }
 
-//     // Ask what to update
-//     printf("\n✔ Record found!\n");
-//     printf("\nWhat would you like to update?\n");
-//     printf("[1] Phone Number\n");
-//     printf("[2] Country\n");
-//     printf("\nEnter your choice: ");
-//     scanf("%d", &choice);
+    // Execute the update statement
+    if (sqlite3_step(stmt) == SQLITE_DONE) {
+        printf("\n✔ Record information updated successfully!\n");
+        success(u);
+    } else {
+        printf("✖ Failed to update record: %s\n", sqlite3_errmsg(db));
+    }
 
-//     switch (choice) {
-//     case 1:
-//         printf("\nEnter new phone number: ");
-//         //scanf("%d", &newPhoneNumber);
-//        // record.phone = newPhoneNumber;
-//         break;
-//     case 2:
-//         printf("\nEnter new country: ");
-//         scanf("%s", newCountry);
-//         strcpy(record.country, newCountry);
-//         break;
-//     default:
-//         printf("\n✖ Invalid choice.\n");
-//         fclose(file);
-//         return;
-//     }
-
-//     // Update the record in the file
-//     fseek(file, position, SEEK_SET); // Move to the record position
-//     //fprintf(file, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
-//       //      record.id, record.userId, record.name, record.accountNbr,
-//         //    record.deposit.month, record.deposit.day, record.deposit.year,
-//           //  record.country, record.phone, record.amount, record.accountType);
-
-//     printf("\n✔ Record information updated successfully!\n");
-
-//     fclose(file);
-// }
+    // Finalize the statement
+    sqlite3_finalize(stmt);
+}
 
 void checkDetailAccount(struct User u){
 
