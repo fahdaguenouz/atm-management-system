@@ -12,9 +12,9 @@ struct Record
 {
     int id;
     int userId;
-    char name[100];
+    char name[50];
     int accountNbr;
-    char country[100];
+    char country[20];
     char phone[15];
     char accountType[10];
     double amount;
@@ -44,5 +44,8 @@ void checkAllAccounts(struct User u);
 void checkDetailAccount(struct User u);
 void updateAccountInfo(struct User u);
 void makeTransactions(struct User u);
+void deleteAccount(struct User u);
+void  transferOwnership(struct User u);
+void exitOrMenu(struct User u);
 //database 
 void initDatabase();

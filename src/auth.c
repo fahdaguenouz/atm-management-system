@@ -116,7 +116,7 @@ printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t    User Registration")
 retry_username:
     printf("\n\n\t\tEnter a username: ");
     scanf("%49s", a);
-
+    clear();
     // Bind the username to the query
     if (sqlite3_bind_text(stmt, 1, a, -1, SQLITE_STATIC) != SQLITE_OK)
     {
@@ -152,7 +152,7 @@ retry_username:
 
     printf("\n\n\t\tEnter a password: ");
     scanf("%49s", pass);
-
+    clear();
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0)
     {
         perror("tcsetattr");
