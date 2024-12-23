@@ -228,28 +228,47 @@ enterAccountType:
    
 }
 void checkAllAccounts(struct User u) {
-    
     sqlite3_stmt *stmt;
-    const char *query = "SELECT accountNbr, depositDate, country, phone, amount, accountType "
-                        "FROM Accounts WHERE userId = ?";
+    const char *query = "SELECT accountNbr, country, phone, amount, accountType, depositMonth, depositDay, depositYear "
+                        "FROM records WHERE userId = ?"; // Ensure this matches your records table
 
-    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    // Prepare the SQL statement
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return;
+    }
+
+    // Bind user ID
     sqlite3_bind_int(stmt, 1, u.id);
 
     system("clear");
-    printf("\t\t====== All Accounts for User, %s =====\n\n", u.name);
+    printf("\t\t====== All Accounts for User: %s =====\n\n", u.name);
+    
+    // Fetch and display each account
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         printf("_____________________\n");
-        printf("\nAccount number: %d\nDeposit Date: %s\nCountry: %s\nPhone number: %d\nAmount deposited: $%.2f\nType Of Account: %s\n",
-               sqlite3_column_int(stmt, 0),  // accountNbr
-               sqlite3_column_text(stmt, 1), // depositDate
-               sqlite3_column_text(stmt, 2), // country
-               sqlite3_column_int(stmt, 3),  // phone
-               sqlite3_column_double(stmt, 4), // amount
-               sqlite3_column_text(stmt, 5)); // accountType
+        int retrievedAccountNbr = sqlite3_column_int(stmt, 0);
+        const char *country = (const char *)sqlite3_column_text(stmt, 1);
+        const char *phone = (const char *)sqlite3_column_text(stmt, 2); // Changed to text for phone
+        double amount = sqlite3_column_double(stmt, 3);
+        const char *accountType = (const char *)sqlite3_column_text(stmt, 4);
+        int depositMonth = sqlite3_column_int(stmt, 5);
+        int depositDay = sqlite3_column_int(stmt, 6);
+        int depositYear = sqlite3_column_int(stmt, 7);
+
+        // Print account details
+        printf("\nAccount Number: %d\n", retrievedAccountNbr);
+        printf("Country: %s\n", country);
+        printf("Phone Number: %s\n", phone); // Print phone as string
+        printf("Amount Deposited: $%.2f\n", amount);
+        printf("Account Type: %s\n", accountType);
+        printf("Deposit Date: %02d/%02d/%04d\n", depositMonth, depositDay, depositYear);
     }
+
+    // Finalize statement
     sqlite3_finalize(stmt);
 }
+
 void updateAccountInfo(struct User u) {
     int accountNbr; // Change from recordId to accountNbr
     char newCountry[100];
