@@ -15,7 +15,7 @@ struct Record
     char name[100];
     int accountNbr;
     char country[100];
-    int phone;
+    char phone[15];
     char accountType[10];
     double amount;
     struct Date deposit;
