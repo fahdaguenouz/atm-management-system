@@ -95,7 +95,8 @@ int registerMenu(char a[50], char pass[50])
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int newId = -1;
-
+system("clear");
+printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t    User Registration");
     // Open the database connection
     if (sqlite3_open("data/database.db", &db) != SQLITE_OK)
     {

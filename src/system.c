@@ -132,7 +132,7 @@ enterDate:
     printf("\nEnter today's date (mm/dd/yyyy): ");
     scanf("%2d/%2d/%4d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
     clear();
-    if (r.deposit.month < 1 || r.deposit.month > 12 || r.deposit.day < 1 || r.deposit.day > 31 || r.deposit.year < 2023) {
+    if (r.deposit.month < 1 || r.deposit.month > 12 || r.deposit.day < 1 || r.deposit.day > 31 || r.deposit.year < 1900) {
         printf("✖ Invalid date. Please try again.\n");
         goto enterDate;
     }
@@ -190,10 +190,10 @@ enterAmount:
     }
 
 enterAccountType:
-    printf("\nChoose the type of account:\n\t-> saving\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice: ");
+    printf("\nChoose the type of account:\n\t-> savings\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice: ");
     scanf("%49s", r.accountType);
     clear();
-    if (strcmp(r.accountType, "saving") != 0 && strcmp(r.accountType, "current") != 0 &&
+    if (strcmp(r.accountType, "savings") != 0 && strcmp(r.accountType, "current") != 0 &&
         strcmp(r.accountType, "fixed01") != 0 && strcmp(r.accountType, "fixed02") != 0 &&
         strcmp(r.accountType, "fixed03") != 0) {
         printf("✖ Invalid account type. Please try again.\n");
@@ -353,10 +353,100 @@ retry:
     // Finalize the statement
     sqlite3_finalize(stmt);
 }
+void checkDetailAccount(struct User u) {
+    int accountNbr; // Account number to check
+    sqlite3_stmt *stmt;
+    char retryOption;
 
-void checkDetailAccount(struct User u){
+    do {
+        system("clear");
+        printf("\t\t\t===== Check Account Details =====\n\n");
+        printf("Enter the account number you want to check: ");
+        scanf("%d", &accountNbr);
 
+        // Query to get account details
+        const char *query = "SELECT accountNbr, country, phone, amount, accountType, depositMonth, depositDay, depositYear "
+                            "FROM records WHERE accountNbr = ? AND userId = ?";
+
+        if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+            printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+            return;
+        }
+
+        // Bind parameters
+        sqlite3_bind_int(stmt, 1, accountNbr);
+        sqlite3_bind_int(stmt, 2, u.id);
+
+        // Execute query and check if record exists
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            // Retrieve values from the result
+            int retrievedAccountNbr = sqlite3_column_int(stmt, 0);
+            const char *country = (const char *)sqlite3_column_text(stmt, 1);
+            const char *phone = (const char *)sqlite3_column_text(stmt, 2); // Changed to text for phone
+            double amount = sqlite3_column_double(stmt, 3);
+            const char *accountType = (const char *)sqlite3_column_text(stmt, 4);
+            int depositMonth = sqlite3_column_int(stmt, 5);
+            int depositDay = sqlite3_column_int(stmt, 6);
+            int depositYear = sqlite3_column_int(stmt, 7);
+
+            // Print account details
+            printf("\nAccount Number: %d\n", retrievedAccountNbr);
+            printf("Country: %s\n", country);
+            printf("Phone Number: %s\n", phone); // Print phone as string
+            printf("Amount Deposited: $%.2f\n", amount);
+            printf("Account Type: %s\n", accountType);
+            printf("Deposit Date: %02d/%02d/%04d\n", depositMonth, depositDay, depositYear);
+
+            // Calculate interest based on account type
+            double interest = 0.0; // Initialize interest variable
+
+            if (strcmp(accountType, "savings") == 0) {
+                interest = amount * 0.07; // Savings interest rate of 7%
+                printf("You will get $%.2f as interest on day %d of every month.\n", interest / 12.0, depositDay);
+            } else if (strcmp(accountType, "fixed01") == 0) {
+                interest = amount * 0.04; // Fixed01 interest rate of 4%
+                int maturityYear = depositYear + 1; // Maturity after one year
+                printf("You will get $%.2f as interest on %02d/%02d/%04d.\n", interest / 12.0 * (12), depositDay,
+                       depositMonth,maturityYear); 
+            } else if (strcmp(accountType, "fixed02") == 0) {
+                interest = amount * 0.05; // Fixed02 interest rate of 5%
+                int maturityYear = depositYear + 2; // Maturity after two years
+                printf("You will get $%.2f as interest on %02d/%02d/%04d.\n", interest /12.0*(12), depositDay,
+                       depositMonth,maturityYear); 
+            } else if (strcmp(accountType,"fixed03") ==0){
+                interest=amount*0.08; // Fixed03 interest rate of 
+                int maturityYear=depositYear+3; 
+                printf ("You will get $%.2f as interest on %02d/%02d/%04d.\n" ,interest/12.0*(12),depositDay,
+                        depositMonth,maturityYear); 
+            }
+           else if(strcmp(accountType,"current")==0){
+                printf ("You will not get interests because the account is of type current.\n");
+            }
+        } else {
+            printf("\n✖ Account not found or does not belong to you.\n");
+        }
+
+        // Finalize statement
+        sqlite3_finalize(stmt);
+
+        // Ask user if they want to try again
+        printf("\nWould you like to try again? (y/n): ");
+        scanf(" %c", &retryOption);
+
+    } while(retryOption == 'y' || retryOption == 'Y'); // Repeat if user wants to retry
+
+    // Option to return to main menu or exit
+    int option;
+    printf("\nEnter 1 to go to the main menu and 0 to exit: ");
+    scanf("%d", &option);
+
+    if(option == 1){
+        mainMenu(u); // Assuming you have a mainMenu function defined elsewhere
+    } else {
+        exit(0); // Exit program
+    }
 }
+
 
 void trimWhitespace(char *str) {
     int end;
