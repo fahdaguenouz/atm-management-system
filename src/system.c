@@ -350,7 +350,6 @@ retry:
     } else {
         printf("✖ Failed to update record: %s\n", sqlite3_errmsg(db));
     }
-
     // Finalize the statement
     sqlite3_finalize(stmt);
 }
