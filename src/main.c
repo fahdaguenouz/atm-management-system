@@ -23,31 +23,21 @@ void mainMenu(struct User u)
         createNewAcc(u);
         break;
     case 2:
-        // student TODO : add your **Update account information** function
-        // here
         updateAccountInfo(u);
         break;
     case 3:
-        // student TODO : add your **Check the details of existing accounts** function
-        // here
         checkDetailAccount(u);
         break;
     case 4:
         checkAllAccounts(u);
         break;
     case 5:
-        // student TODO : add your **Make transaction** function
-        // here
         makeTransactions(u);
         break;
     case 6:
-        // student TODO : add your **Remove existing account** function
-        // here
         deleteAccount(u);
         break;
     case 7:
-        // student TODO : add your **Transfer owner** function
-        // here
         transferOwnership(u);
         break;
     case 8:
@@ -77,7 +67,6 @@ void initMenu(struct User *u)
         printf("\nChoose an option: ");
         if (scanf("%d", &option) != 1)
         {
-            // Clear invalid input
             while (getchar() != '\n');
             printf("✖ Invalid input! Please enter a number.\n");
             printf("\nPress Enter to continue...");
@@ -91,11 +80,12 @@ void initMenu(struct User *u)
             int userId = getPassword(u->name, u->password);
             if (userId > 0)
             {
-                u->id = userId; // Save the logged-in user's ID
+                // Save the logged-in user's ID
+                u->id = userId; 
                 printf("\n✔ Login successful! Welcome, %s.\n", u->name);
                 printf("\nPress Enter to continue...");
                 getchar();
-                running = 0; // Exit the loop to proceed to mainMenu
+                running = 0;
             }
             else if (userId ==-1)
             {
@@ -117,17 +107,16 @@ void initMenu(struct User *u)
            
             break;
         case 2:
-            // student TODO : add your **Registration** function
-            // here
              int registeredId= registerMenu(u->name, u->password);
            if (registeredId > 0)
     {
-        u->id = registeredId; // Save the new user's ID
+        // Save the new user's ID
+        u->id = registeredId; 
          printf("\n✔ Registration successful!\n");
          printf("\nPress Enter to continue...");
          while (getchar() != '\n');
         getchar();
-        running = 0; // Exit the loop to proceed to mainMenu
+        running = 0;
     }
     break;
         case 3:
@@ -146,7 +135,7 @@ int main()
     struct User u;
     initDatabase();
     initMenu(&u);
-    if (u.id > 0) // Only proceed to mainMenu if a user is logged in
+    if (u.id > 0)
     {
         mainMenu(u);
     }

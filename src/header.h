@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
+
+
+
 struct Date
 {
     int month, day, year;
 };
 
-// all fields for each record of an account
 struct Record
 {
     int id;
@@ -19,7 +21,6 @@ struct Record
     char accountType[10];
     double amount;
     struct Date deposit;
-    struct Date withdraw;
 };
 
 struct User
