@@ -56,8 +56,9 @@ void initDatabase() {
 void exitOrMenu(struct User u)
 {
     int option;
-    printf("\nEnter 1 to go to the main menu and 0 to exit: ");
+    printf("\nEnter 1 to go to the main menu or click any to exit: ");
     scanf("%d", &option);
+    clear();
 
     if(option == 1){
         mainMenu(u);
@@ -108,7 +109,7 @@ enterDate:
         printf("✖ Invalid date. Please try again.\n");
         goto enterDate;
     }
-    printf("%d %d %d",r.deposit.day,r.deposit.month,r.deposit.year);
+   // printf("%d %d %d",r.deposit.day,r.deposit.month,r.deposit.year);
 
 
 enterAccountNumber:
@@ -119,7 +120,7 @@ enterAccountNumber:
         printf("✖ Invalid account number. Please try again.\n");
         goto enterAccountNumber;
     }
-    printf("%d",r.accountNbr);
+    //printf("%d",r.accountNbr);
 
 
     // Check if account number exists
@@ -424,7 +425,7 @@ void checkDetailAccount(struct User u) {
         printf("\nWould you like to try again? (y/n): ");
         scanf(" %c", &retryOption);
         clear();
-    } while(retryOption == 'y' || retryOption == 'Y');
+    } while(retryOption == 'y');
 
      exitOrMenu(u);
 
@@ -576,6 +577,7 @@ void deleteAccount(struct User u) {
     printf("\t\t\t===== Delete Account =====\n\n");
     printf("Enter the account number you want to delete: ");
     scanf("%d", &accountNbr);
+                clear();
 
     const char *checkQuery = "SELECT accountNbr FROM records WHERE accountNbr = ? AND userId = ?";
     
@@ -623,6 +625,7 @@ void transferOwnership(struct User u) {
     printf("\t\t\t===== Transfer Ownership =====\n\n");
     printf("Enter the account number you want to transfer: ");
     scanf("%d", &accountNbr);
+                clear();
 
     
     const char *checkQuery = "SELECT userId FROM records WHERE accountNbr = ? AND userId = ?";
@@ -642,6 +645,7 @@ void transferOwnership(struct User u) {
 
         printf("Enter the name of the new owner: ");
         scanf("%49s", newOwnerName);
+                clear();
 
 
         const char *ownerCheckQuery = "SELECT id FROM users WHERE name = ?";
@@ -651,6 +655,7 @@ void transferOwnership(struct User u) {
             return;
         }
 
+           
 
         sqlite3_bind_text(stmt, 1, newOwnerName, -1, SQLITE_TRANSIENT);
 
@@ -675,7 +680,7 @@ void transferOwnership(struct User u) {
                 printf("✖ Failed to transfer ownership: %s\n", sqlite3_errmsg(db));
             }
         } else {
-            printf("✖ New owner with name '%s' does not exist.\n", newOwnerName);
+            printf("✖ There is no owner with the name'%s' .\n", newOwnerName);
         }
     } else {
         printf("\n✖ Account not found or does not belong to you.\n");

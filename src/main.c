@@ -115,7 +115,6 @@ void initMenu(struct User *u)
          printf("\n✔ Registration successful!\n");
          printf("\nPress Enter to continue...");
          while (getchar() != '\n');
-        getchar();
         running = 0;
     }
     break;
