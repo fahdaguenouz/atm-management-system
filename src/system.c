@@ -13,7 +13,7 @@ void initDatabase() {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         exit(1);
     }
-    
+
     const char *sqlUser = "CREATE TABLE IF NOT EXISTS users ("
                           "id INTEGER PRIMARY KEY, "
                           "name TEXT UNIQUE, "
@@ -100,7 +100,6 @@ void createNewAcc(struct User u) {
     system("clear");
     printf("\t\t\t===== New Record =====\n");
 
-    // Get deposit date
 enterDate:
     printf("\nEnter today's date (mm/dd/yyyy): ");
     scanf("%2d/%2d/%4d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
@@ -112,7 +111,6 @@ enterDate:
     printf("%d %d %d",r.deposit.day,r.deposit.month,r.deposit.year);
 
 
-    // Get account number
 enterAccountNumber:
     printf("\nEnter the account number: ");
     scanf("%d", &r.accountNbr);
@@ -131,17 +129,15 @@ enterAccountNumber:
     return;
     }
 
-    // Bind the account number
     sqlite3_bind_int(stmt, 1, r.accountNbr);
 
-    // Execute the query
+
     if (sqlite3_step(stmt) == SQLITE_ROW) {
     printf("Account number exists.\n");
     }
-    // Finalize the statement
+
     sqlite3_finalize(stmt);
 
-    // Get other details
     printf("\nEnter the country: ");
     scanf("%49s", r.country);
     clear();
@@ -156,7 +152,7 @@ enterPhoneNumber:
           for (int i = 0; r.phone[i] != '\0'; i++) {
             if (!isdigit(r.phone[i])) {
             printf("✖ Invalid phone number. Please enter numbers only.\n");
-            goto enterPhoneNumber; // Prompt again for valid input
+            goto enterPhoneNumber;
         }
     }
 
@@ -180,7 +176,6 @@ enterAccountType:
         goto enterAccountType;
     }
 
-    // Insert the new account
     const char *insertQuery = "INSERT INTO records (userId, accountNbr, country, phone, accountType, amount, depositMonth, depositDay, depositYear,name) "
                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     if (sqlite3_prepare_v2(db, insertQuery, -1, &stmt, NULL) != SQLITE_OK) {
@@ -213,13 +208,12 @@ void checkAllAccounts(struct User u) {
     const char *query = "SELECT accountNbr, country, phone, amount, accountType, depositMonth, depositDay, depositYear "
                         "FROM records WHERE userId = ?"; 
 
-    // Prepare the SQL statement
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
         printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return;
     }
 
-    // Bind user ID
+ 
     sqlite3_bind_int(stmt, 1, u.id);
 
     system("clear");
