@@ -220,7 +220,6 @@ void checkAllAccounts(struct User u) {
     system("clear");
     printf("\t\t====== All Accounts for User: %s =====\n\n", u.name);
     
-    // Fetch and display each account
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         printf("_____________________\n");
         int retrievedAccountNbr = sqlite3_column_int(stmt, 0);
@@ -312,10 +311,8 @@ retry:
             return;
     }
 
-    // Prepare the update statement
     const char *updateQuery = "UPDATE records SET ";
     
-    // Determine which field to update
     if (choice == 1) {
         updateQuery = "UPDATE records SET phone = ? WHERE accountNbr = ? AND userId = ?";
         
@@ -341,14 +338,14 @@ retry:
         sqlite3_bind_int(stmt, 3, u.id);
     }
 
-    // Execute the update statement
+
     if (sqlite3_step(stmt) == SQLITE_DONE) {
         printf("\n✔ Record information updated successfully!\n");
         success(u);
     } else {
         printf("✖ Failed to update record: %s\n", sqlite3_errmsg(db));
     }
-    // Finalize the statement
+
     sqlite3_finalize(stmt);
     success(u);
 }
@@ -373,9 +370,7 @@ void checkDetailAccount(struct User u) {
         sqlite3_bind_int(stmt, 1, accountNbr);
         sqlite3_bind_int(stmt, 2, u.id);
 
-        // Execute query and check if record exists
         if (sqlite3_step(stmt) == SQLITE_ROW) {
-            // Retrieve values from the result
             int retrievedAccountNbr = sqlite3_column_int(stmt, 0);
             const char *country = (const char *)sqlite3_column_text(stmt, 1);
             const char *phone = (const char *)sqlite3_column_text(stmt, 2); 
@@ -387,7 +382,7 @@ void checkDetailAccount(struct User u) {
 
             printf("\nAccount Number: %d\n", retrievedAccountNbr);
             printf("Country: %s\n", country);
-            printf("Phone Number: %s\n", phone); // Print phone as string
+            printf("Phone Number: %s\n", phone); 
             printf("Amount Deposited: $%.2f\n", amount);
             printf("Account Type: %s\n", accountType);
             printf("Deposit Date: %02d/%02d/%04d\n", depositMonth, depositDay, depositYear);
@@ -504,7 +499,6 @@ void makeTransactions(struct User u) {
             printf("Enter amount: $");
             scanf("%lf", &amount);
             clear();
-            // Check if the amount is positive
             if (amount <= 0) {
                 printf("✖ Amount must be positive. Please enter a valid amount.\n");
                 printf("Would you like to try again? (y/n): ");
@@ -585,8 +579,6 @@ void deleteAccount(struct User u) {
         printf("✖ Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return;
     }
-
-    // Bind parameters
     sqlite3_bind_int(stmt, 1, accountNbr);
     sqlite3_bind_int(stmt, 2, u.id);
 

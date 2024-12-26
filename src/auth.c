@@ -17,8 +17,7 @@ void loginMenu(char username[50], char password[50]) {
     printf("Enter your username: ");
     scanf("%49s", username); 
     clear();
-
-    // Trim the input username
+    
     trimWhitespace(username);
 
     if (sqlite3_open("data/database.db", &db) != SQLITE_OK) {
@@ -42,7 +41,6 @@ void loginMenu(char username[50], char password[50]) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         dbPassword = (const char *)sqlite3_column_text(stmt, 0); 
-        // Trim the dbPassword
         trimWhitespace((char *)dbPassword);
     } else {
         printf("✖ Username not found.\n");
@@ -93,16 +91,16 @@ int registerMenu(char a[50], char pass[50])
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int newId = -1;
-system("clear");
-printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t    User Registration");
-    // Open the database connection
+    system("clear");
+    printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t    User Registration");
+    
     if (sqlite3_open("data/database.db", &db) != SQLITE_OK)
     {
         fprintf(stderr, "Error opening database: %s\n", sqlite3_errmsg(db));
         exit(1);
     }
 
-    // Check if the username already exists
+    
     const char *checkQuery = "SELECT id FROM users WHERE name = ?;";
     if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, NULL) != SQLITE_OK)
     {
@@ -155,7 +153,6 @@ retry_username:
         exit(1);
     }
 
-    // Generate a new ID by finding the maximum ID
     const char *idQuery = "SELECT MAX(id) FROM users;";
     if (sqlite3_prepare_v2(db, idQuery, -1, &stmt, NULL) != SQLITE_OK)
     {
